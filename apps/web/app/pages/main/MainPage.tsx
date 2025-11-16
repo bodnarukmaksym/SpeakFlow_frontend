@@ -1,16 +1,30 @@
 import * as React from "react";
 import styles from "../../../styles/MainPage.module.css";
+import { useAudioUpload } from "../../hooks/useAudioUpload";
+import { env } from "../../config/config";
 
 export function MainPage() {
-    const [selectedTool, setSelectedTool] = React.useState<string>("transcription");
-    const [audioFile, setAudioFile] = React.useState<File | null>(null);
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [selectedTool, setSelectedTool] = React.useState("transcription");
+    const { audioFile, isProcessing, uploadAudio, setAudioFile } = useAudioUpload();
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            setAudioFile(file);
+        if (!file) return;
+
+        if (file.type !== 'audio/mpeg' && !file.name.toLowerCase().endsWith('.mp3')) {
+            alert('Please upload an MP3 audio file');
+            e.target.value = '';
+            return;
         }
+
+        const maxSizeBytes = env.maxFileSizeMB * 1024 * 1024;
+        if (file.size > maxSizeBytes) {
+            alert(`File size must be less than ${env.maxFileSizeMB}MB`);
+            e.target.value = '';
+            return;
+        }
+
+        setAudioFile(file);
     };
 
     const handleProcessAudio = () => {
@@ -24,29 +38,11 @@ export function MainPage() {
             return;
         }
 
-        const formData = new FormData();
-        formData.append("file", audioFile);
-
-        const endpoint = selectedTool === "transcription"
-            ? "http://localhost:8000/get_transcription"
-            : "http://localhost:8000/get_summarizing";
-
-        const form = document.createElement("form");
-        form.method = "GET";
-        form.action = endpoint;
-        form.style.display = "none";
-
-        const fileInput = document.createElement("input");
-        fileInput.type = "file";
-        fileInput.name = "file";
-
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(audioFile);
-        fileInput.files = dataTransfer.files;
-
-        form.appendChild(fileInput);
-        document.body.appendChild(form);
-        form.submit();
+        try {
+            uploadAudio(audioFile, selectedTool);
+        } catch (error) {
+            alert(`Failed to process audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
     };
 
     return (
@@ -144,15 +140,14 @@ export function MainPage() {
 
                         <div className={styles.dropWrap}>
                             <input
-                                ref={fileInputRef}
                                 id="audio-input"
                                 type="file"
-                                accept="audio/*"
+                                accept=".mp3,audio/mpeg"
                                 className={styles.fileInput}
                                 onChange={handleFileChange}
                             />
                             <label htmlFor="audio-input" className={styles.dropzone}>
-                                {audioFile ? audioFile.name : "Drag and drop your audio file here"}
+                                {audioFile ? audioFile.name : "Drag and drop your MP3 file here"}
                             </label>
                         </div>
 
@@ -160,8 +155,9 @@ export function MainPage() {
                             type="button"
                             className={styles.primaryBtn}
                             onClick={handleProcessAudio}
+                            disabled={isProcessing}
                         >
-                            Process Audio
+                            {isProcessing ? "Processing..." : "Process Audio"}
                         </button>
                     </div>
 

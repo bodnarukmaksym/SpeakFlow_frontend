@@ -1,104 +1,34 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "../../../styles/SummarizingResultPage.module.css";
-
-interface SummaryData {
-    summary: string;
-}
+import { useSummary } from "../../hooks/useSummary";
+import { useFileOperations } from "../../hooks/useFileOperations";
+import { API_ENDPOINTS } from "../../config/config";
 
 export function SummarizingResultPage() {
     const navigate = useNavigate();
-    const [summary, setSummary] = React.useState("");
-    const [isLoading, setIsLoading] = React.useState<boolean>(false);
+    const { summary, isLoading: isLoadingSummary } = useSummary();
+    const { isLoading: isLoadingFile, downloadPdf, saveToDrive } = useFileOperations({
+        downloadPdfEndpoint: API_ENDPOINTS.downloadSummaryPdf,
+        saveToDriveEndpoint: API_ENDPOINTS.saveSummaryToDrive,
+    });
 
-    React.useEffect(() => {
-        const loadSummary = async () => {
-            setIsLoading(true);
-            try {
-                const response = await fetch("http://localhost:8000/get_summary");
-
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-
-                const data: SummaryData = await response.json();
-                setSummary(data.summary);
-            } catch (error) {
-                console.error("Error loading summary:", error);
-                alert(
-                    `Failed to load summary: ${
-                        error instanceof Error ? error.message : "Unknown error"
-                    }`
-                );
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        loadSummary();
-    }, []);
+    const isLoading = isLoadingSummary || isLoadingFile;
 
     const handleDownloadPdf = async () => {
-        setIsLoading(true);
         try {
-            const response = await fetch(
-                "http://localhost:8000/download_summary_pdf",
-                {
-                    method: "POST",
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "summary.pdf";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+            await downloadPdf();
         } catch (error) {
-            console.error("Error downloading PDF:", error);
-            alert(
-                `Failed to download PDF: ${
-                    error instanceof Error ? error.message : "Unknown error"
-                }`
-            );
-        } finally {
-            setIsLoading(false);
+            alert(`Failed to download PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     };
 
     const handleSaveToDrive = async () => {
-        setIsLoading(true);
         try {
-            const response = await fetch(
-                "http://localhost:8000/save_summary_to_drive",
-                {
-                    method: "POST",
-
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
-            }
-
-            const result = await response.json();
+            const result = await saveToDrive();
             alert(result.message || "Successfully saved to Drive!");
         } catch (error) {
-            console.error("Error saving to Drive:", error);
-            alert(
-                `Failed to save to Drive: ${
-                    error instanceof Error ? error.message : "Unknown error"
-                }`
-            );
-        } finally {
-            setIsLoading(false);
+            alert(`Failed to save to Drive: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     };
 
@@ -135,7 +65,7 @@ export function SummarizingResultPage() {
 
                     <h2 className={styles.sectionTitle}>Key points from Audio</h2>
 
-                    {isLoading && !summary ? (
+                    {isLoadingSummary && !summary ? (
                         <p style={{ textAlign: "center", color: "#6b7280" }}>
                             Loading summary...
                         </p>
