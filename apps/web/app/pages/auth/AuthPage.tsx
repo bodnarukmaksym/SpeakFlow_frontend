@@ -1,6 +1,12 @@
 import styles from "../../../styles/AuthPage.module.css";
+import { useNavigate } from "react-router-dom";
 
 export function AuthPage() {
+    const navigate = useNavigate();
+
+    const handleLogin = () => {
+        navigate("/main");
+    };
   return (
     <main className={styles.shell} aria-label="Authorization">
       <div className={styles.topbar}>
@@ -27,7 +33,7 @@ export function AuthPage() {
 
           <p className={styles.sub}>Sign in to start processing your audio.</p>
 
-          <button type="button" className={styles.googleBtn}>
+          <button type="button" className={styles.googleBtn} onClick={handleLogin}>
             <span className={styles.gIcon} aria-hidden="true">
               <svg viewBox="0 0 24 24">
                 <path d="M21.6 12.23c0-.66-.06-1.3-.18-1.92H12v3.64h5.4c-.23 1.25-.94 2.3-2 3v2.48h3.23c1.89-1.74 2.97-4.31 2.97-7.2Z" />
