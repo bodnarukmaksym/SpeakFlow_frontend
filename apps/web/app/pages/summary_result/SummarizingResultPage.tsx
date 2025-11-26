@@ -7,7 +7,7 @@ import { API_ENDPOINTS } from "../../config/config";
 
 export function SummarizingResultPage() {
     const navigate = useNavigate();
-    const { summary, isLoading: isLoadingSummary } = useSummary();
+    const { summary, keyPoints, wordCount, isLoading: isLoadingSummary } = useSummary();
     const { isLoading: isLoadingFile, downloadPdf, saveToDrive } = useFileOperations({
         downloadPdfEndpoint: API_ENDPOINTS.downloadSummaryPdf,
         saveToDriveEndpoint: API_ENDPOINTS.saveSummaryToDrive,
@@ -63,14 +63,33 @@ export function SummarizingResultPage() {
                         <h1 className={styles.title}>Summarizing Result</h1>
                     </header>
 
-                    <h2 className={styles.sectionTitle}>Key points from Audio</h2>
-
-                    {isLoadingSummary && !summary ? (
+                    {isLoadingSummary ? (
                         <p style={{ textAlign: "center", color: "#6b7280" }}>
                             Loading summary...
                         </p>
                     ) : (
-                        <p className={styles.summaryText}>{summary}</p>
+                        <>
+                            <div className={styles.summarySection}>
+                                <h2 className={styles.sectionTitle}>Summary</h2>
+                                <p className={styles.summaryText}>{summary}</p>
+                                <div className={styles.wordCount}>
+                                    Word count: <strong>{wordCount}</strong>
+                                </div>
+                            </div>
+
+                            {keyPoints.length > 0 && (
+                                <div className={styles.keyPointsSection}>
+                                    <h2 className={styles.sectionTitle}>Key Points</h2>
+                                    <ul className={styles.keyPointsList}>
+                                        {keyPoints.map((point, index) => (
+                                            <li key={index} className={styles.keyPoint}>
+                                                {point}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </>
                     )}
 
                     <div className={styles.actions}>

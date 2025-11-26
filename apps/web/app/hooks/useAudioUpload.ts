@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { API_ENDPOINTS } from '../config/config';
+import { authService } from '../services/authService';
 
 interface UseAudioUploadReturn {
     audioFile: File | null;
     isProcessing: boolean;
-    uploadAudio: (file: File, tool: string) => void;
+    uploadAudio: (file: File, tool: string) => Promise<{ success: boolean }>;
     setAudioFile: (file: File | null) => void;
 }
 
@@ -12,34 +13,42 @@ export const useAudioUpload = (): UseAudioUploadReturn => {
     const [audioFile, setAudioFile] = useState<File | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const uploadAudio = (file: File, tool: string) => {
+    const uploadAudio = async (file: File, tool: string): Promise<{ success: boolean }> => {
         setIsProcessing(true);
 
         try {
+            const token = authService.getToken();
+            const formData = new FormData();
+            formData.append('file', file);
+
             const endpoint = tool === 'transcription'
                 ? API_ENDPOINTS.transcription
                 : API_ENDPOINTS.summarizing;
 
-            const form = document.createElement("form");
-            form.method = "GET";
-            form.action = endpoint;
-            form.style.display = "none";
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: formData,
+            });
 
-            const fileInput = document.createElement("input");
-            fileInput.type = "file";
-            fileInput.name = "file";
+            if (response.status === 401) {
+                authService.logout();
+                return { success: false };
+            }
 
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
+            if (!response.ok) {
+                throw new Error(`Upload failed: ${response.status}`);
+            }
 
-            form.appendChild(fileInput);
-            document.body.appendChild(form);
-            form.submit();
+            // Якщо 200 - успіх
+            return { success: true };
         } catch (error) {
             console.error('Error uploading audio:', error);
-            setIsProcessing(false);
             throw error;
+        } finally {
+            setIsProcessing(false);
         }
     };
 

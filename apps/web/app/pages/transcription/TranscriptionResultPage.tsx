@@ -9,16 +9,16 @@ export function TranscriptionResultPage() {
     const navigate = useNavigate();
     const {
         transcription,
-        currentPage,
-        totalPages,
         isLoading: isLoadingTranscription,
-        loadPage,
     } = useTranscription();
 
     const { isLoading: isLoadingFile, downloadPdf, saveToDrive } = useFileOperations({
         downloadPdfEndpoint: API_ENDPOINTS.downloadPdf,
         saveToDriveEndpoint: API_ENDPOINTS.saveToDrive,
     });
+
+    const isLoading = isLoadingTranscription || isLoadingFile;
+
     const handleDownloadPdf = async () => {
         try {
             await downloadPdf();
@@ -34,47 +34,6 @@ export function TranscriptionResultPage() {
         } catch (error) {
             alert(`Failed to save to Drive: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
-    };
-
-    const isLoading = isLoadingTranscription || isLoadingFile;
-
-    const handlePrevPage = () => {
-        if (currentPage > 1) {
-            loadPage(currentPage - 1);
-        }
-    };
-
-    const handleNextPage = () => {
-        if (currentPage < totalPages) {
-            loadPage(currentPage + 1);
-        }
-    };
-
-    const renderPageNumbers = () => {
-        const pages = [];
-        const maxVisible = 5;
-        let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-        let endPage = Math.min(totalPages, startPage + maxVisible - 1);
-
-        if (endPage - startPage < maxVisible - 1) {
-            startPage = Math.max(1, endPage - maxVisible + 1);
-        }
-
-        for (let i = startPage; i <= endPage; i++) {
-            pages.push(
-                <button
-                    key={i}
-                    className={`${styles.pageBtn} ${i === currentPage ? styles.pageBtnActive : ""}`}
-                    type="button"
-                    onClick={() => loadPage(i)}
-                    disabled={isLoading}
-                >
-                    {i}
-                </button>
-            );
-        }
-
-        return pages;
     };
 
     return (
@@ -113,28 +72,19 @@ export function TranscriptionResultPage() {
                         {isLoadingTranscription ? (
                             <p style={{ textAlign: "center", color: "#6b7280" }}>Loading...</p>
                         ) : (
-                            <p style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>{transcription}</p>
+                            <div className={styles.transcriptContent}>
+                                {transcription.map((segment, index) => (
+                                    <div key={index} className={styles.transcriptSegment}>
+                                        <div className={styles.speakerBadge}>
+                                            Speaker {segment.speaker}
+                                        </div>
+                                        <div className={styles.segmentText}>
+                                            {segment.text}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         )}
-                    </div>
-
-                    <div className={styles.pagination} role="navigation" aria-label="Pages">
-                        <button
-                            className={styles.pageBtn}
-                            type="button"
-                            onClick={handlePrevPage}
-                            disabled={currentPage === 1 || isLoading}
-                        >
-                            {"<< Prev"}
-                        </button>
-                        {renderPageNumbers()}
-                        <button
-                            className={styles.pageBtn}
-                            type="button"
-                            onClick={handleNextPage}
-                            disabled={currentPage === totalPages || isLoading}
-                        >
-                            {"Next >>"}
-                        </button>
                     </div>
 
                     <div className={styles.actions}>

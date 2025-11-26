@@ -1,9 +1,11 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "../../../styles/MainPage.module.css";
 import { useAudioUpload } from "../../hooks/useAudioUpload";
 import { env } from "../../config/config";
 
 export function MainPage() {
+    const navigate = useNavigate();
     const [selectedTool, setSelectedTool] = React.useState("transcription");
     const { audioFile, isProcessing, uploadAudio, setAudioFile } = useAudioUpload();
 
@@ -27,7 +29,7 @@ export function MainPage() {
         setAudioFile(file);
     };
 
-    const handleProcessAudio = () => {
+    const handleProcessAudio = async () => {
         if (!audioFile) {
             alert("Please upload an audio file first!");
             return;
@@ -39,7 +41,15 @@ export function MainPage() {
         }
 
         try {
-            uploadAudio(audioFile, selectedTool);
+            const result = await uploadAudio(audioFile, selectedTool);
+
+            if (result.success) {
+                if (selectedTool === "transcription") {
+                    navigate("/transcription");
+                } else {
+                    navigate("/summarizing");
+                }
+            }
         } catch (error) {
             alert(`Failed to process audio: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }

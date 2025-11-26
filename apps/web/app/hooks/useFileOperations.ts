@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { authService } from '../services/authService';
 
 interface FileOperationsConfig {
     downloadPdfEndpoint: string;
@@ -19,9 +20,19 @@ export const useFileOperations = (
     const downloadPdf = async () => {
         setIsLoading(true);
         try {
+            const token = authService.getToken();
+
             const response = await fetch(config.downloadPdfEndpoint, {
-                method: 'GET',
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
             });
+
+            if (response.status === 401) {
+                authService.logout();
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error(`Server error: ${response.status}`);
@@ -49,9 +60,19 @@ export const useFileOperations = (
     const saveToDrive = async () => {
         setIsLoading(true);
         try {
+            const token = authService.getToken();
+
             const response = await fetch(config.saveToDriveEndpoint, {
-                method: 'GET',
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
             });
+
+            if (response.status === 401) {
+                authService.logout();
+                return;
+            }
 
             if (!response.ok) {
                 throw new Error(`Server error: ${response.status}`);
