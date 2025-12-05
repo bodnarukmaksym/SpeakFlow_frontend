@@ -1,11 +1,10 @@
 import styles from "../../../styles/AuthPage.module.css";
-import { useNavigate } from "react-router-dom";
+import { API_ENDPOINTS } from "../../config/config";
 
 export function AuthPage() {
-    const navigate = useNavigate();
 
     const handleLogin = () => {
-        navigate("/main");
+        window.location.href = API_ENDPOINTS.googleAuthUrl;
     };
   return (
     <main className={styles.shell} aria-label="Authorization">

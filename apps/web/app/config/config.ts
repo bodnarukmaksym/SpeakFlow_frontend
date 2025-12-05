@@ -9,6 +9,9 @@ export const API_ENDPOINTS = {
     downloadPdf: `${env.apiBaseUrl}/download_pdf`,
     saveToDrive: `${env.apiBaseUrl}/save_to_drive`,
 
+    googleCallback: `${env.apiBaseUrl}/auth/google/callback`,
+    googleAuthUrl: `${env.apiBaseUrl}/auth/google/url`,
+
     summarizing: `${env.apiBaseUrl}/get_summarizing`,
     summary: `${env.apiBaseUrl}/get_summary`,
     downloadSummaryPdf: `${env.apiBaseUrl}/download_summary_pdf`,

@@ -9,6 +9,7 @@ import { MainPage } from "./pages/main/MainPage";
 import { TranscriptionResultPage } from "./pages/transcription/TranscriptionResultPage";
 import { SummarizingResultPage } from "./pages/summary_result/SummarizingResultPage";
 import { NotFoundPage } from "./pages/notFoundPage/NotFoundPage";
+import { GoogleAuthCallbackPage } from "./pages/google_auth_callback/GoogleAuthCallbackPage";
 
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root container #root not found");
@@ -28,6 +29,16 @@ function App() {
                             </Layout>
                         }
                     />
+
+                    <Route
+                        path="/auth/google"
+                        element={
+                            <Layout>
+                                <GoogleAuthCallbackPage />
+                            </Layout>
+                        }
+                    />
+
                     <Route
                         path="/main"
                         element={
