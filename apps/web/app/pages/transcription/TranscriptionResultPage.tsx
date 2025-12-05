@@ -1,103 +1,53 @@
-import styles from "../../../styles/TranscriptionResultPage.module.css";
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
-
-interface TranscriptionData {
-    text: string;
-    total_pages: number;
-}
+import styles from "../../../styles/TranscriptionResultPage.module.css";
+import { useTranscription } from "../../hooks/useTranscription";
+import { useFileOperations } from "../../hooks/useFileOperations";
+import { API_ENDPOINTS } from "../../config/config";
 
 export function TranscriptionResultPage() {
     const navigate = useNavigate();
-    const [transcription, setTranscription] = React.useState<string>("");
-    const [currentPage, setCurrentPage] = React.useState<number>(1);
-    const [totalPages, setTotalPages] = React.useState<number>(1);
-    const [isLoading, setIsLoading] = React.useState<boolean>(false);
+    const {
+        transcription,
+        currentPage,
+        totalPages,
+        isLoading: isLoadingTranscription,
+        loadPage,
+    } = useTranscription();
 
-    React.useEffect(() => {
-        loadTranscriptionPage(1);
-    }, []);
-
-    const loadTranscriptionPage = async (page: number) => {
-        setIsLoading(true);
-        try {
-            const response = await fetch(
-                `http://localhost:8000/get_transcription_page?page=${page}`
-            );
-
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
-            }
-
-            const data: TranscriptionData = await response.json();
-            setTranscription(data.text);
-            setTotalPages(data.total_pages);
-            setCurrentPage(page);
-        } catch (error) {
-            console.error("Error loading transcription:", error);
-            alert(`Failed to load transcription: ${error instanceof Error ? error.message : "Unknown error"}`);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
+    const { isLoading: isLoadingFile, downloadPdf, saveToDrive } = useFileOperations({
+        downloadPdfEndpoint: API_ENDPOINTS.downloadPdf,
+        saveToDriveEndpoint: API_ENDPOINTS.saveToDrive,
+    });
     const handleDownloadPdf = async () => {
         try {
-            const response = await fetch("http://localhost:8000/download_pdf", {
-                method: "POST",
-            });
-
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "transcription.pdf";
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+            await downloadPdf();
         } catch (error) {
-            console.error("Error downloading PDF:", error);
-            alert(`Failed to download PDF: ${error instanceof Error ? error.message : "Unknown error"}`);
+            alert(`Failed to download PDF: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     };
 
     const handleSaveToDrive = async () => {
         try {
-            const response = await fetch("http://localhost:8000/save_to_drive", {
-                method: "POST",
-            });
-
-            if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
-            }
-
-            const result = await response.json();
+            const result = await saveToDrive();
             alert(result.message || "Successfully saved to Drive!");
         } catch (error) {
-            console.error("Error saving to Drive:", error);
-            alert(`Failed to save to Drive: ${error instanceof Error ? error.message : "Unknown error"}`);
+            alert(`Failed to save to Drive: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     };
 
+    const isLoading = isLoadingTranscription || isLoadingFile;
+
     const handlePrevPage = () => {
         if (currentPage > 1) {
-            loadTranscriptionPage(currentPage - 1);
+            loadPage(currentPage - 1);
         }
     };
 
     const handleNextPage = () => {
         if (currentPage < totalPages) {
-            loadTranscriptionPage(currentPage + 1);
+            loadPage(currentPage + 1);
         }
-    };
-
-    const handlePageClick = (page: number) => {
-        loadTranscriptionPage(page);
     };
 
     const renderPageNumbers = () => {
@@ -116,7 +66,7 @@ export function TranscriptionResultPage() {
                     key={i}
                     className={`${styles.pageBtn} ${i === currentPage ? styles.pageBtnActive : ""}`}
                     type="button"
-                    onClick={() => handlePageClick(i)}
+                    onClick={() => loadPage(i)}
                     disabled={isLoading}
                 >
                     {i}
@@ -160,7 +110,7 @@ export function TranscriptionResultPage() {
                     </header>
 
                     <div className={styles.transcriptBox}>
-                        {isLoading ? (
+                        {isLoadingTranscription ? (
                             <p style={{ textAlign: "center", color: "#6b7280" }}>Loading...</p>
                         ) : (
                             <p style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>{transcription}</p>
