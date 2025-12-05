@@ -9,7 +9,6 @@ describe('GoogleAuthCallbackPage', () => {
     });
 
     it('should show warning when no code provided', () => {
-        // Забезпечуємо чистий URL без параметрів
         cy.window().then((win) => {
             win.history.pushState({}, '', '/auth/callback');
         });
@@ -26,11 +25,10 @@ describe('GoogleAuthCallbackPage', () => {
     it('should show loading state during authorization', () => {
         cy.intercept('POST', '**/auth/google/callback', {
             statusCode: 200,
-            delay: 1000, // Затримка для перевірки стану завантаження
+            delay: 1000,
             body: { access_token: 'test-token' },
         }).as('authCallback');
 
-        // Підробляємо URL перед монтуванням
         cy.window().then((win) => {
             win.history.pushState({}, '', '/auth/callback?code=test-code');
         });
